@@ -1,0 +1,49 @@
+# Macro:  \C-x\C-x ==> duplicate the previous Word
+#  intended mostly for renaming files to a new suffix
+# a whole lot of work just to copy a word
+# first, need to bind keys to the functions that must be called
+# then, define a macro using those keys to call those functions
+# The macro itself is:
+# 1) vi-bWord
+# 2) set-mark
+# 3) vi-eWord
+# 4) forward-char
+# 5) kill-region
+# 6) yank
+# 7) <space>
+# 8) yank
+
+"\C-b":vi-bWord
+"\C-n":vi-eWord
+"\C-x\C-m":set-mark
+"\C-x\C-k":kill-region
+"\C-x\C-y":yank
+
+"\C-x\C-x":"\C-b\C-x\C-m\C-n\C-l\C-x\C-k\C-x\C-y \C-x\C-y"
+
+
+#-- Uncomment these to use them
+#"\C-h":backward-char
+#"\e[D":backward-char
+#"\C-l":forward-char
+#"\e[C":forward-char
+#
+#"\C-b":backward-word
+#"\C-n":forward-word
+#
+#"\C-k":previous-history
+#"\e[A":previous-history
+#"\C-j":next-history
+#"\e[B":next-history
+#
+#"\e[3~":delete-char
+#"\C-y":kill-word
+#
+#"\C-p":kill-line
+#"\C-u":backward-kill-line
+#
+#"\C-g":redraw-current-line
+#"\C-f":revert-line
+#"\C-w":end-of-history
+#set bell-style none
+ 

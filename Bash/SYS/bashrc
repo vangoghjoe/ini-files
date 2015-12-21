@@ -1,0 +1,135 @@
+### /etc/bashrc
+
+#
+#  See /etc/profile for notes on shell rc file calling sequence
+#
+
+[ -n "$TRACERC" ] && echo "Starting /etc/bashrc"
+#-----------------------------------------------------------
+#----------    Load application settings
+#-----------------------------------------------------------
+# Local application settings can be put in rc files
+# in /etc/profile.d.  
+for i in /etc/profile.d/*.sh ; do
+    if [ -r "$i" ]; then . "$i" ; fi
+done
+
+# * * * * *  DON'T CHANGE ABOVE HERE * * * * * * * * * * * *
+############################################################
+############################################################
+
+#+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+#+ + + + +     CUSTOMIZABLE SECTION
+#+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+
+### Export all variables and functions defined 
+###  (Notice this is explicitly turned off at the end of this file)
+set -a
+
+
+# Set prompt here instead of .bash_profile so will be used when use su.
+# Changes prompt if shelled out from MUMPS.
+#   NOTE: tty test is to avoid probs with rpc commands
+ 
+if [ "`tty`" != "not a tty" ]; then
+    dm-shelled-from-mumps -X 2> /dev/null && MUMPS="MUMPS" || MUMPS=""
+    [ -n "$DVB_PROJ" ] && DVB_PROJ2="[$DVB_PROJ]" || DVB_PROJ2=""
+    PS1='\h \033[7m$PWD\033[0m\012${DVB_PROJ2}${MUMPS} '
+fi
+
+### Fix root's path
+# * sbin components come BEFORE $MYEE component
+if  /bin/id | /bin/grep "^uid=0(root)" >& /dev/null ; then
+    if [ -r "/etc/profile.d/dm-profile-path-functions.sh" ]; then
+        source "/etc/profile.d/dm-profile-path-functions.sh"
+        dm-shell-add-to-path "/usr/local/sbin" before
+        dm-shell-add-to-path "/usr/sbin" before
+        dm-shell-add-to-path "/sbin" before
+        dm-shell-del-from-path "."
+    else
+        if [ -n "$MYEE" ]; then 
+            PATH="/usr/local/sbin:/usr/sbin:/sbin:$MYEE:/usr/local/bin:/usr/bin:$DM_BIN"
+        else
+            PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:$DM_BIN"
+        fi
+    fi
+fi
+export PATH
+
+###  Load dm-dir-var variables, if any
+# NOTE: dm-shell-dir* fcns defined in /etc/profile.d/dm-shell-dir-var-fcns.sh
+if [ -r ~/.dm-dir-vars-data ]; then
+    dm-shell-dir-vars-source-all
+fi
+
+#-----------------------------------------------------------
+#-----------      FUNCTIONS / ALIASES          -------------
+#-----------------------------------------------------------
+ 
+#  Edit and source a file
+#    - Returns user to cur dir.
+dm-shell-edit-and-source() { 
+        if [ $# -ne 1 ]; then
+            echo "usage: dm-shell-edit-and-source  file"
+            return 1
+        fi
+        local svdir=`pwd`
+        [ -f "$1" ] && \cp -f "$1" "${1}.bak"
+        ${EDITOR:-/usr/bin/vi} "$1"
+        . "$1" ; 
+        cd "$svdir"
+ }
+
+#---        Standard protection aliases
+alias	cp='cp -i'
+alias	mv='mv -i'
+alias	rm='rm -i'
+
+
+#++  Common shortcuts for listing files
+ll () { ls -l "$@" |less -F ; }
+lr () { ls -lrt "$@" |less -F ; }
+
+#++++    List each path element separately
+#alias   path="echo \$PATH | tr ':' '\012'"
+
+#++++ Show 15 most recently updated files
+t() { ls -lrt "$@" | tail -15 ; }
+
+alias   df='df -h'						#Human readable du
+
+#--  Jump into ETS (this needs to be changed if ETS is moved to a server other than zarkov, like beans again.)
+alias   ets='rlogin -l ets zarkov'
+
+
+#---	    D-M EE Dept. Shortcuts
+alias pas='cat *ass* | grep -v "^;" |less'       		 #password log parsing
+alias exc='cat *xcep* | grep -v "^;" |less'       		 #exceptions log parsing
+alias err='cat *rro* | grep -v "^;" | less' 	 		 #error log parsing
+alias fnp='cat *FNP* | grep -v "^;" | less' 	 		 #yes, FNP log parsing
+alias cq='cat *UNC.txt |sort -nu |grep -v "^;" > all-TD-UNC.txt' #make a new master UNC tiffdriver
+
+#---	    Directory Creation stuff
+alias mkw='mkdir -m 777 work-${USER}'	         		 #make a work directory
+mkwn() { mkdir -m 777 work-${USER}_${@}  ; }	 		 #make a work directory with a user specified name
+alias wr='cd work-${USER}'			 		 #enter the mkw directory
+mkd() { mkdir -p -m 777 "$@" ; export mdir="$@"; }               #Make a dir with mode 777 and all needed paths, save val in $mdir
+
+#---   
+#  Option '-m' preserves environmental vars, notably $DVB_PROJ 
+#   -a appends current history,  -r reads content of history
+#   together they act to make history seamless before and after su
+su() { history -a; command su -m ;history -r ; }
+
+
+
+
+###  end auto-exporting of functions and vars
+set +a
+
+############################################################
+############################################################
+# * * * * *  DON'T CHANGE BELOW HERE * * * * * * * * * * * *
+
+[ -n "$TRACERC" ] && echo "Leaving /etc/bashrc"
+

@@ -1,0 +1,22 @@
+### /etc/bashrc.local
+
+#
+#  See /etc/profile for notes on shell rc file calling sequence
+#
+
+[ -n "$TRACERC" ] && echo "Starting /etc/bashrc.local"
+
+# * * * * *  DON'T CHANGE ABOVE HERE * * * * * * * * * * * *
+############################################################
+############################################################
+
+#+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+#+ + + + +     CUSTOMIZABLE SECTION
+#+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+# Add whatever you want here
+
+############################################################
+############################################################
+# * * * * *  DON'T CHANGE BELOW HERE * * * * * * * * * * * *
+
+[ -n "$TRACERC" ] && echo "Leaving /etc/bashrc.local"

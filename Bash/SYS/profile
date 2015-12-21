@@ -1,0 +1,149 @@
+#/etc/profile   (SHOP SYSTEM PROFILE)
+#############################################################################
+#  WHEN RC FILES ARE SOURCED (LOADED) BY BASH
+#    - On login:
+#       1) SYSTEM profile (/etc/profile), then 
+#       2) USER profile (first found from ~/.bash_profile,
+#          ~/.bash_login, or ~/.profile)
+#
+#    - On interactive non-login (e.g., do a 'su', or in csh and type 'bash'):
+#       1) USER bashrc: ~/.bashrc
+#
+#  NOTE: technically, there is no SYSTEM bashrc.
+#
+#  This is too limited to suit most users' requirements. So, in 
+#  practice the RC files are set up thus:
+#    1. SYSTEM profile: /etc/profile 
+#         [ sourced by bash on login ]
+#    2. SYSTEM (local version) profile: /etc/profile.local
+#         [sourced at end of SYSTEM profile]
+#    3. USER profile: ~/.bash_profile 
+#         [sourced by bash on login ]
+#    4. USER (local version) profile: ~/.bash_profile.local 
+#         [sourced near end of USER profile]
+#    5. USER bashrc: ~/.bashrc 
+#         [sourced by USER profile on login and by bash for non-login ]
+#    6. SYSTEM bashrc: /etc/bashrc 
+#         [sourced at beginning of local USER bashrc]
+#    6a. any other application settings that are found in files
+#        called /etc/profile.d/*.sh
+#         [sourced at beginning of SYSTEM bashrc]
+#    7. SYSTEM (local version) bashrc: /etc/bashrc.local
+#         [sourced at beginning of local USER bashrc]
+#    8. USER (local version) bashrc: ~/.bashrc.local 
+#         [sourced at end of USER bashrc]
+#
+#  NOTE: 'Local version' means a version that has host-specific entries, 
+#  perhaps overriding the general ones or taking advantage of 
+#  local capabilities.  Conversely, it's expected that all
+#  machines in the shop will have identical copies of the
+#  non-local versions, regardless of OS, etc.  In the case
+#  of USER files, this means a given user will have the same
+#  version on all of his/her accounts.
+#
+#  Seems pretty complicated ... and it is a little I guess - but really
+#  just boils down to 3 pairs of file types: 
+#    1) login-specific stuff vs other, which is "profile" vs "login" 
+#    2) system-wide vs user specific, ie what's in /etc vs in user's 
+#       home dir.
+#    3) versions that are specific to a certain machine vs those that 
+#       are the same for all machines, ie "local" vs regular files.
+#
+#  Version: v1.1 -- 24 Jun 2005
+#############################################################################
+
+#-- Turn TRACERC on to trace shell rc file sourcing
+#export TRACERC=1
+[ -n "$TRACERC" ] && echo "Starting /etc/profile"
+
+# * * * * *  DON'T CHANGE ABOVE HERE * * * * * * * * * * * *
+############################################################
+############################################################
+
+# NOTE: extra ee stuff is in /etc/profile.d/ee-profile.sh
+
+DM_BIN="/usr/local/DM/bin"
+
+# NOTE: root's path is fixed here in case needed later in the profile, but
+# path is also manipulated for root in /etc/bashrc so will have correct path
+# if 'su' to root.  
+if /bin/id | /bin/grep "^uid=0(root)" > /dev/null ;then
+    PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:$DM_BIN"
+else
+    PATH=".:/usr/local/bin:/usr/bin:$DM_BIN"
+fi
+
+umask 000
+
+###  The IVT terminal emulator tries to be nice and set
+###  $DISPLAY for X-Windows use, but causes delay on vim startup
+[ "$TERM" = "ivt" ] && export DISPLAY_SAVE="$DISPLAY" && unset DISPLAY
+
+
+USER="`id -un`"
+LOGNAME=$USER
+MAIL="/var/spool/mail/$USER"
+HOSTNAME=`/bin/hostname`
+HISTSIZE=10000
+HISTFILESIZE=10000
+HISTCONTROL=ignoreboth
+IGNOREEOF=10
+MANPATH=/usr/local/man:/usr/share/man
+EDITOR=/usr/local/bin/vim
+LD_LIBRARY_PATH="/usr/local/lib:/usr/lib"
+command_oriented_history=on
+
+[ ! -f "$HOME/.inputrc" ] && INPUTRC=/etc/inputrc
+
+if [ "$TERM" = "" ]
+then
+	if /bin/i386
+	then
+		TERM=sun-color
+	else
+		TERM=sun
+	fi
+fi
+
+export PATH USER LOGNAME MAIL HOSTNAME HISTSIZE INPUTRC TERM
+export DM_BIN EE_PATH LC_COLLATE MANPATH command_oriented_history
+export LD_LIBRARY_PATH
+
+
+# No core files by default
+ulimit -S -c 0 > /dev/null 2>&1
+
+#	Message of the Day and mail check. rsh doesn't get this
+case "$0" in
+-sh | -ksh | -jsh | -bash)
+	if [ ! -f .hushlogin ]
+	then
+		/bin/cat -s /etc/motd
+		/bin/mail -E
+		case $? in
+		0) 
+			echo "You have new mail."
+		  	;;
+		2) 
+			echo "You have mail."
+		   	;;
+		esac
+	fi
+esac
+
+#+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+#+ + + + +     CUSTOMIZABLE SECTION
+#+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
+# Add whatever you want here
+
+############################################################
+############################################################
+# * * * * *  DON'T CHANGE BELOW HERE * * * * * * * * * * * *
+
+#-----------------------------------------------------------
+#----------    Load local system profile 
+#-----------------------------------------------------------
+if [ -r /etc/profile.local ]; then . /etc/profile.local ; fi
+
+[ -n "$TRACERC" ] && echo "Leaving /etc/profile"
+
