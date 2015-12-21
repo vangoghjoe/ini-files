@@ -53,83 +53,30 @@
 #############################################################################
 
 #-- Turn TRACERC on to trace shell rc file sourcing
-#export TRACERC=1
+export TRACERC=1
 [ -n "$TRACERC" ] && echo "Starting /etc/profile"
 
 # * * * * *  DON'T CHANGE ABOVE HERE * * * * * * * * * * * *
 ############################################################
 ############################################################
 
-# NOTE: extra ee stuff is in /etc/profile.d/ee-profile.sh
-
-DM_BIN="/usr/local/DM/bin"
-
-# NOTE: root's path is fixed here in case needed later in the profile, but
-# path is also manipulated for root in /etc/bashrc so will have correct path
-# if 'su' to root.  
-if /bin/id | /bin/grep "^uid=0(root)" > /dev/null ;then
-    PATH="/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:$DM_BIN"
-else
-    PATH=".:/usr/local/bin:/usr/bin:$DM_BIN"
-fi
-
-umask 000
-
-###  The IVT terminal emulator tries to be nice and set
-###  $DISPLAY for X-Windows use, but causes delay on vim startup
-[ "$TERM" = "ivt" ] && export DISPLAY_SAVE="$DISPLAY" && unset DISPLAY
-
 
 USER="`id -un`"
 LOGNAME=$USER
-MAIL="/var/spool/mail/$USER"
 HOSTNAME=`/bin/hostname`
 HISTSIZE=10000
 HISTFILESIZE=10000
 HISTCONTROL=ignoreboth
 IGNOREEOF=10
-MANPATH=/usr/local/man:/usr/share/man
 EDITOR=/usr/local/bin/vim
-LD_LIBRARY_PATH="/usr/local/lib:/usr/lib"
 command_oriented_history=on
 
 [ ! -f "$HOME/.inputrc" ] && INPUTRC=/etc/inputrc
 
-if [ "$TERM" = "" ]
-then
-	if /bin/i386
-	then
-		TERM=sun-color
-	else
-		TERM=sun
-	fi
-fi
 
-export PATH USER LOGNAME MAIL HOSTNAME HISTSIZE INPUTRC TERM
-export DM_BIN EE_PATH LC_COLLATE MANPATH command_oriented_history
-export LD_LIBRARY_PATH
+export USER LOGNAME HOSTNAME HISTSIZE INPUTRC TERM
+export command_oriented_history
 
-
-# No core files by default
-ulimit -S -c 0 > /dev/null 2>&1
-
-#	Message of the Day and mail check. rsh doesn't get this
-case "$0" in
--sh | -ksh | -jsh | -bash)
-	if [ ! -f .hushlogin ]
-	then
-		/bin/cat -s /etc/motd
-		/bin/mail -E
-		case $? in
-		0) 
-			echo "You have new mail."
-		  	;;
-		2) 
-			echo "You have mail."
-		   	;;
-		esac
-	fi
-esac
 
 #+ + + + + + + + + + + + + + + + + + + + + + + + + + + + + +
 #+ + + + +     CUSTOMIZABLE SECTION
@@ -139,6 +86,11 @@ esac
 ############################################################
 ############################################################
 # * * * * *  DON'T CHANGE BELOW HERE * * * * * * * * * * * *
+
+#-----------------------------------------------------------
+#----------   Load vendor supplied system profile eg Apple's
+#-----------------------------------------------------------
+if [ -r /etc/profile.vendor-supplied ]; then . /etc/profile.vendor-supplied ; fi
 
 #-----------------------------------------------------------
 #----------    Load local system profile 
